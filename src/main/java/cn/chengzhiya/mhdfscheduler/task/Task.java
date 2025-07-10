@@ -8,4 +8,9 @@ public interface Task {
     boolean isCancelled();
 
     void cancel();
+
+    int getTaskId();
+
+    boolean isFolia();
+
 }

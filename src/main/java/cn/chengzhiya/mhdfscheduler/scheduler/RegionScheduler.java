@@ -9,58 +9,72 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.jetbrains.annotations.NotNull;
 
 public final class RegionScheduler {
-    private BukkitScheduler bukkitScheduler;
-    private io.papermc.paper.threadedregions.scheduler.RegionScheduler regionScheduler;
+    private final Object schedulerHandle;
 
     public RegionScheduler() {
         if (MHDFScheduler.isFolia()) {
-            regionScheduler = Bukkit.getRegionScheduler();
+            schedulerHandle = Bukkit.getRegionScheduler();
         } else {
-            bukkitScheduler = Bukkit.getScheduler();
+            schedulerHandle = Bukkit.getScheduler();
         }
     }
 
     public MHDFTask runTask(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Runnable task) {
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTask(plugin, task));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTask(plugin, task));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.RegionScheduler scheduler =
+                    (io.papermc.paper.threadedregions.scheduler.RegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.run(plugin, world, chunkX, chunkZ, (o) -> task.run()));
         }
-
-        return new MHDFTask(regionScheduler.run(plugin, world, chunkX, chunkZ, (o) -> task.run()));
     }
 
     public MHDFTask runTask(@NotNull Plugin plugin, @NotNull Location location, @NotNull Runnable task) {
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTask(plugin, task));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTask(plugin, task));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.RegionScheduler scheduler =
+                    (io.papermc.paper.threadedregions.scheduler.RegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.run(plugin, location, (o) -> task.run()));
         }
-
-        return new MHDFTask(regionScheduler.run(plugin, location, (o) -> task.run()));
     }
 
-    public MHDFTask runTaskLater(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Runnable task, long delayTicks) {
+    public MHDFTask runTaskLater(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ,
+                                 @NotNull Runnable task, long delayTicks) {
         if (delayTicks < 1) {
             delayTicks = 1;
         }
 
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskLater(plugin, task, delayTicks));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskLater(plugin, task, delayTicks));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.RegionScheduler scheduler =
+                    (io.papermc.paper.threadedregions.scheduler.RegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runDelayed(plugin, world, chunkX, chunkZ, (o) -> task.run(), delayTicks));
         }
-
-        return new MHDFTask(regionScheduler.runDelayed(plugin, world, chunkX, chunkZ, (o) -> task.run(), delayTicks));
     }
 
-    public MHDFTask runTaskLater(@NotNull Plugin plugin, @NotNull Location location, @NotNull Runnable task, long delayTicks) {
+    public MHDFTask runTaskLater(@NotNull Plugin plugin, @NotNull Location location,
+                                 @NotNull Runnable task, long delayTicks) {
         if (delayTicks < 1) {
             delayTicks = 1;
         }
 
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskLater(plugin, task, delayTicks));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskLater(plugin, task, delayTicks));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.RegionScheduler scheduler =
+                    (io.papermc.paper.threadedregions.scheduler.RegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runDelayed(plugin, location, (o) -> task.run(), delayTicks));
         }
-
-        return new MHDFTask(regionScheduler.runDelayed(plugin, location, (o) -> task.run(), delayTicks));
     }
 
-    public MHDFTask runTaskTimer(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
+    public MHDFTask runTaskTimer(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ,
+                                 @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
         if (initialDelayTicks < 1) {
             initialDelayTicks = 1;
         }
@@ -69,13 +83,18 @@ public final class RegionScheduler {
         }
 
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskTimer(plugin, task, initialDelayTicks, periodTicks));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskTimer(plugin, task, initialDelayTicks, periodTicks));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.RegionScheduler scheduler =
+                    (io.papermc.paper.threadedregions.scheduler.RegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runAtFixedRate(plugin, world, chunkX, chunkZ,
+                    (o) -> task.run(), initialDelayTicks, periodTicks));
         }
-
-        return new MHDFTask(regionScheduler.runAtFixedRate(plugin, world, chunkX, chunkZ, (o) -> task.run(), initialDelayTicks, periodTicks));
     }
 
-    public MHDFTask runTaskTimer(@NotNull Plugin plugin, @NotNull Location location, @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
+    public MHDFTask runTaskTimer(@NotNull Plugin plugin, @NotNull Location location,
+                                 @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
         if (initialDelayTicks < 1) {
             initialDelayTicks = 1;
         }
@@ -84,9 +103,13 @@ public final class RegionScheduler {
         }
 
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskTimer(plugin, task, initialDelayTicks, periodTicks));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskTimer(plugin, task, initialDelayTicks, periodTicks));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.RegionScheduler scheduler =
+                    (io.papermc.paper.threadedregions.scheduler.RegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runAtFixedRate(plugin, location,
+                    (o) -> task.run(), initialDelayTicks, periodTicks));
         }
-
-        return new MHDFTask(regionScheduler.runAtFixedRate(plugin, location, (o) -> task.run(), initialDelayTicks, periodTicks));
     }
 }

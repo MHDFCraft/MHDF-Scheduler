@@ -5,33 +5,60 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class MHDFTask implements Task {
-    private BukkitTask bukkitTask;
-    private ScheduledTask scheduledTask;
+
+    private final Object taskHandle;
+    private boolean isFolia;
 
     public MHDFTask(BukkitTask bukkitTask) {
-        this.bukkitTask = bukkitTask;
+        this.taskHandle = bukkitTask;
+        this.isFolia = false;
     }
 
     public MHDFTask(ScheduledTask scheduledTask) {
-        this.scheduledTask = scheduledTask;
+        this.taskHandle = scheduledTask;
+        this.isFolia = true;
     }
+
 
     @Override
     public Plugin getOwner() {
-        return bukkitTask != null ? bukkitTask.getOwner() : scheduledTask.getOwningPlugin();
+        if (isFolia) {
+            return ((ScheduledTask) taskHandle).getOwningPlugin();
+        } else {
+            return ((BukkitTask) taskHandle).getOwner();
+        }
     }
 
     @Override
     public boolean isCancelled() {
-        return bukkitTask != null ? bukkitTask.isCancelled() : scheduledTask.isCancelled();
+        if (isFolia) {
+            return ((ScheduledTask) taskHandle).isCancelled();
+        } else {
+            return ((BukkitTask) taskHandle).isCancelled();
+        }
     }
 
     @Override
     public void cancel() {
-        if (bukkitTask != null) {
-            bukkitTask.cancel();
+        if (isFolia) {
+            ((ScheduledTask) taskHandle).cancel();
         } else {
-            scheduledTask.cancel();
+            ((BukkitTask) taskHandle).cancel();
         }
     }
+
+    @Override
+    public int getTaskId() {
+        if (isFolia) {
+            return -1;  // Folia没有ID
+        } else {
+            return ((BukkitTask) taskHandle).getTaskId();
+        }
+    }
+
+    @Override
+    public boolean isFolia(){
+        return isFolia;
+    }
+
 }

@@ -9,49 +9,57 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.TimeUnit;
 
 public final class AsyncScheduler {
-    private BukkitScheduler bukkitScheduler;
-    private io.papermc.paper.threadedregions.scheduler.AsyncScheduler asyncScheduler;
+
+    private final Object schedulerHandle;
 
     public AsyncScheduler() {
         if (MHDFScheduler.isFolia()) {
-            asyncScheduler = Bukkit.getAsyncScheduler();
+            schedulerHandle = Bukkit.getAsyncScheduler();
         } else {
-            bukkitScheduler = Bukkit.getScheduler();
+            schedulerHandle = Bukkit.getScheduler();
         }
     }
 
     public MHDFTask runTask(@NotNull Plugin plugin, @NotNull Runnable task) {
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskAsynchronously(plugin, task));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskAsynchronously(plugin, task));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.AsyncScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.AsyncScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runNow(plugin, (o) -> task.run()));
         }
-
-        return new MHDFTask(asyncScheduler.runNow(plugin, (o) -> task.run()));
     }
 
     public MHDFTask runTaskLater(@NotNull Plugin plugin, @NotNull Runnable task, long delay) {
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskLaterAsynchronously(plugin, task, delay));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskLaterAsynchronously(plugin, task, delay));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.AsyncScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.AsyncScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runDelayed(plugin, (o) -> task.run(), delay * 50, TimeUnit.MILLISECONDS));
         }
-
-        return new MHDFTask(asyncScheduler.runDelayed(plugin, (o) -> task.run(), delay * 50, TimeUnit.MILLISECONDS));
     }
 
     public MHDFTask runTaskTimer(@NotNull Plugin plugin, @NotNull Runnable task, long delay, long period) {
         if (period < 1) period = 1;
 
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskTimerAsynchronously(plugin, task, delay, period));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskTimerAsynchronously(plugin, task, delay, period));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.AsyncScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.AsyncScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runAtFixedRate(plugin, (o) -> task.run(), delay * 50, period * 50, TimeUnit.MILLISECONDS));
         }
-
-        return new MHDFTask(asyncScheduler.runAtFixedRate(plugin, (o) -> task.run(), delay * 50, period * 50, TimeUnit.MILLISECONDS));
     }
 
     public void cancel(@NotNull Plugin plugin) {
         if (!MHDFScheduler.isFolia()) {
-            bukkitScheduler.cancelTasks(plugin);
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            scheduler.cancelTasks(plugin);
             return;
+        } else {
+            io.papermc.paper.threadedregions.scheduler.AsyncScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.AsyncScheduler) schedulerHandle;
+            scheduler.cancelTasks(plugin);
         }
-
-        asyncScheduler.cancelTasks(plugin);
     }
 }

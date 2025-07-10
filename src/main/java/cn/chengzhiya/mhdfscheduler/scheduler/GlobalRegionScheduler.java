@@ -7,23 +7,24 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.jetbrains.annotations.NotNull;
 
 public final class GlobalRegionScheduler {
-    private BukkitScheduler bukkitScheduler;
-    private io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler globalRegionScheduler;
+    private final Object schedulerHandle;
 
     public GlobalRegionScheduler() {
         if (MHDFScheduler.isFolia()) {
-            globalRegionScheduler = Bukkit.getGlobalRegionScheduler();
+            schedulerHandle = Bukkit.getGlobalRegionScheduler();
         } else {
-            bukkitScheduler = Bukkit.getScheduler();
+            schedulerHandle = Bukkit.getScheduler();
         }
     }
 
     public MHDFTask runTask(@NotNull Plugin plugin, @NotNull Runnable task) {
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTask(plugin, task));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTask(plugin, task));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.run(plugin, (o) -> task.run()));
         }
-
-        return new MHDFTask(globalRegionScheduler.run(plugin, (o) -> task.run()));
     }
 
     public MHDFTask runTaskLater(@NotNull Plugin plugin, @NotNull Runnable task, long delay) {
@@ -32,10 +33,12 @@ public final class GlobalRegionScheduler {
         }
 
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskLater(plugin, task, delay));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskLater(plugin, task, delay));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runDelayed(plugin, (o) -> task.run(), delay));
         }
-
-        return new MHDFTask(globalRegionScheduler.runDelayed(plugin, (o) -> task.run(), delay));
     }
 
     public MHDFTask runTaskTimer(@NotNull Plugin plugin, @NotNull Runnable task, long initialDelayTicks, long periodTicks) {
@@ -47,18 +50,21 @@ public final class GlobalRegionScheduler {
         }
 
         if (!MHDFScheduler.isFolia()) {
-            return new MHDFTask(bukkitScheduler.runTaskTimer(plugin, task, initialDelayTicks, periodTicks));
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runTaskTimer(plugin, task, initialDelayTicks, periodTicks));
+        } else {
+            io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler) schedulerHandle;
+            return new MHDFTask(scheduler.runAtFixedRate(plugin, (o) -> task.run(), initialDelayTicks, periodTicks));
         }
-
-        return new MHDFTask(globalRegionScheduler.runAtFixedRate(plugin, (o) -> task.run(), initialDelayTicks, periodTicks));
     }
 
     public void cancel(@NotNull Plugin plugin) {
         if (!MHDFScheduler.isFolia()) {
-            Bukkit.getScheduler().cancelTasks(plugin);
-            return;
+            BukkitScheduler scheduler = (BukkitScheduler) schedulerHandle;
+            scheduler.cancelTasks(plugin);
+        } else {
+            io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler scheduler = (io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler) schedulerHandle;
+            scheduler.cancelTasks(plugin);
         }
-
-        globalRegionScheduler.cancelTasks(plugin);
     }
 }
